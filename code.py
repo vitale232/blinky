@@ -339,12 +339,7 @@ while True:
         strandbows.animate()
         pixels.show()
     elif ANIMATION_IDX == 7:
-        if now > (PAUSE_SECS * 4 + last_paint_time):
-            if rg_led.value == True:
-                (rg_led, b_led) = set_rgb_led(rg_led, b_led, False)
-            else:
-                (rg_led, b_led) = set_rgb_led(rg_led, b_led, True)
-            last_paint_time = now
+        (rg_led, b_led) = set_rgb_led(rg_led, b_led, True)
         neopix[0] = color
         neopix.brightness = brightness
         pixels.brightness = brightness
@@ -352,12 +347,7 @@ while True:
         color_chase.animate()
         pixels.show()
     elif ANIMATION_IDX == 8:
-        if now > (PAUSE_SECS * 4 + last_paint_time):
-            if rg_led.value == True:
-                (rg_led, b_led) = set_rgb_led(rg_led, b_led, False)
-            else:
-                (rg_led, b_led) = set_rgb_led(rg_led, b_led, True)
-            last_paint_time = now
+        (rg_led, b_led) = set_rgb_led(rg_led, b_led, True)
         neopix[0] = color
         neopix.brightness = brightness
         pixels.brightness = brightness
