@@ -35,7 +35,7 @@ class PairChase(Chase):
             size=size,
             spacing=spacing,
             reverse=reverse,
-            name=None,
+            name=name,
         )
 
     def space_color(self, n, pixel_no=0):
