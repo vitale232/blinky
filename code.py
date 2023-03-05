@@ -1,29 +1,46 @@
-import rainbowio
+# CircuitPython 8
+import board
+from analogio import AnalogIn
+import digitalio
+import neopixel
+import time
+
 from adafruit_led_animation.animation.comet import Comet
 from adafruit_led_animation.animation.chase import Chase
 from adafruit_led_animation.sequence import AnimationSequence
-from adafruit_led_animation.color import PURPLE, AMBER, JADE
-
-
+from adafruit_led_animation.color import PURPLE, JADE
 from adafruit_led_animation.helper import PixelMap
 from adafruit_led_animation.animation.rainbow import Rainbow
 from adafruit_led_animation.animation.rainbowchase import RainbowChase
 from adafruit_led_animation.animation.rainbowcomet import RainbowComet
 from adafruit_led_animation.group import AnimationGroup
 from adafruit_led_animation.animation.rainbowsparkle import RainbowSparkle
-import board
-from analogio import AnalogIn
-import digitalio
-import neopixel
 from adafruit_neopxl8 import NeoPxl8
 from adafruit_debouncer import Debouncer
-
-import time
 
 
 print("Hello, Scorpio:\n https://learn.adafruit.com/introducing-feather-rp2040-scorpio")
 print(dir(board))
 time.sleep(1)
+
+
+class PairChase(Chase):
+    def __init__(
+        self, pixel_object, speed, color, size=2, spacing=3, reverse=False, name=None
+    ):
+        super().__init__(
+            pixel_object,
+            speed,
+            color,
+            size=size,
+            spacing=spacing,
+            reverse=reverse,
+            name=None,
+        )
+
+    def space_color(self, n, pixel_no=0):
+        space_color = (self.color[0], 255 - self.color[1], 255 - self.color[2])
+        return space_color
 
 
 class RollingValue:
@@ -85,15 +102,7 @@ def setup_strands(pin_a, brightness, n=2, strand_len=60):
         pin_a, npixels, num_strands=n, auto_write=False, brightness=brightness
     )
     strands = [strand(pixels, idx, strand_len) for idx in range(n)]
-    print("returning")
     return (strands, pixels)
-
-
-def setup_adafruit_animations(pixels):
-    comet = Comet(pixels, speed=0.01, color=JADE, bounce=True)
-    chase = Chase(pixels, speed=0.1, color=PURPLE, size=3, spacing=6)
-    animations = AnimationSequence(comet, chase, advance_interval=3, auto_clear=False)
-    return animations
 
 
 def set_rgb_led(rg_led, b_led, value):
@@ -151,14 +160,15 @@ last_paint_time = -1
 PAUSE_SECS = 0.25
 ANIMATION_1_PAUSE_SECS = 0.05
 ANIMATION_2_PAUSE_SECS = ANIMATION_1_PAUSE_SECS / 2
-ANIMATION_4_PAUSE_SECS = 0.75
-ANIMATION_4_IS_PRIMARY = True
+TWO_COLOR_PAUSE_SECS = 0.75
+TWO_COLOR_IS_PRIMARY = True
+
 COMET_SPEED = 0.025
 CHASE_SPEED = 0.15
 CHASE_SPEED_2 = 0.25
 
 ANIMATION_IDX = 7
-N_ANIMATIONS = 8
+N_ANIMATIONS = 9
 POWER_SAFE_ANIMATIONS = [3, 4, 5, 6, 7]
 
 rolling_brightness = RollingValue(precision=2)
@@ -167,19 +177,21 @@ rolling_green = RollingValue(precision=0)
 rolling_blue = RollingValue(precision=0)
 
 animations = []
-color_chase_animations = []
+pair_chase_animations = []
 color_chunk_chase_animations = []
+chase_animations = []
 for strand in strands:
     chase = Chase(strand, speed=CHASE_SPEED, size=3, spacing=6, color=(0, 0, 0))
     comet = Comet(strand, COMET_SPEED, (255, 20, 20), tail_length=10, ring=True)
     animations.append(chase)
     animations.append(comet)
-    color_chase = Chase(strand, CHASE_SPEED_2, (0, 0, 0))
-    color_chase_animations.append(color_chase)
+    chase_animations.append(Chase(strand, CHASE_SPEED_2, (255, 255, 255)))
+    pair_chase_animations.append(PairChase(strand, CHASE_SPEED_2, (0, 0, 0)))
     color_chunk_chase_animations.append(
         Chase(strand, CHASE_SPEED_2, (0, 0, 0), size=20, spacing=7)
     )
-color_chase = AnimationGroup(*color_chase_animations)
+chase = AnimationGroup(*chase_animations)
+pair_chase = AnimationGroup(*pair_chase_animations)
 color_chunk_chase = AnimationGroup(*color_chunk_chase_animations)
 
 
@@ -245,10 +257,11 @@ while True:
     button_val = button.value
 
     if chase_idx % 25 == 0:
-        print(
-            f"{chase_idx=} :: {ANIMATION_IDX=} :: {brightness=} :: {button_val=} "
-            + f":: ({rolling_red.value}, {rolling_green.value}, {rolling_blue.value})\n"
-        )
+        pass
+        # print(
+        #     f"{chase_idx=} :: {ANIMATION_IDX=} :: {brightness=} :: {button_val=} "
+        #     + f":: ({rolling_red.value}, {rolling_green.value}, {rolling_blue.value})\n"
+        # )
 
     if ANIMATION_IDX == 1 and now > (ANIMATION_1_PAUSE_SECS + last_paint_time):
         (rg_led, b_led) = set_rgb_led(rg_led, b_led, True)
@@ -293,13 +306,13 @@ while True:
             chase_idx = 0
         else:
             chase_idx += 1
-        if now > (ANIMATION_4_PAUSE_SECS + last_paint_time):
-            if ANIMATION_4_IS_PRIMARY == True:
+        if now > (TWO_COLOR_PAUSE_SECS + last_paint_time):
+            if TWO_COLOR_IS_PRIMARY == True:
                 neopix[0] = inverse_color
-                ANIMATION_4_IS_PRIMARY = False
+                TWO_COLOR_IS_PRIMARY = False
             else:
                 neopix[0] = color
-                ANIMATION_4_IS_PRIMARY = True
+                TWO_COLOR_IS_PRIMARY = True
             last_paint_time = now
 
         neopix.brightness = brightness
@@ -343,10 +356,25 @@ while True:
         neopix[0] = color
         neopix.brightness = brightness
         pixels.brightness = brightness
-        color_chase.color = color
-        color_chase.animate()
+        chase.color = color
+        chase.animate()
         pixels.show()
     elif ANIMATION_IDX == 8:
+        (rg_led, b_led) = set_rgb_led(rg_led, b_led, True)
+        if now > (TWO_COLOR_PAUSE_SECS + last_paint_time):
+            if TWO_COLOR_IS_PRIMARY == True:
+                neopix[0] = inverse_color
+                TWO_COLOR_IS_PRIMARY = False
+            else:
+                neopix[0] = color
+                TWO_COLOR_IS_PRIMARY = True
+            last_paint_time = now
+        neopix.brightness = brightness
+        pixels.brightness = brightness
+        pair_chase.color = color
+        pair_chase.animate()
+        pixels.show()
+    elif ANIMATION_IDX == 9:
         (rg_led, b_led) = set_rgb_led(rg_led, b_led, True)
         neopix[0] = color
         neopix.brightness = brightness
@@ -354,7 +382,6 @@ while True:
         color_chunk_chase.color = color
         color_chunk_chase.animate()
         pixels.show()
-
 
     else:
         pass
