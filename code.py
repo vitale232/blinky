@@ -38,8 +38,34 @@ class PairChase(Chase):
             name=name,
         )
 
+    @staticmethod
+    def make_space(red, green, blue):
+        off_thresh = 20
+        on_thresh = 220
+        if red > on_thresh and blue < off_thresh and green < off_thresh:
+            space = (0, 0, 255)
+        elif blue > on_thresh and red < off_thresh and green < off_thresh:
+            space = (255, 100, 0)
+        elif green > on_thresh and red < off_thresh and blue < off_thresh:
+            space = (180, 0, 255)
+        elif red > on_thresh and blue > on_thresh and green < off_thresh:
+            space = (10, 10, 255)
+        elif (
+            red > min(on_thresh + 10, 255)
+            and green > min(on_thresh + 10, 255)
+            and blue > min(on_thresh + 10, 255)
+        ):
+            # eliminate the noise that is occurring due to pots when all are all the way on
+            space = (0, 0, 0)
+        else:
+            space = (255 - red, 255 - green, 255 - blue)
+        return space
+
     def space_color(self, n, pixel_no=0):
-        space_color = (self.color[0], 255 - self.color[1], 255 - self.color[2])
+        if isinstance(self.color[0], int):
+            space_color = self.make_space(*self.color)
+        else:
+            space_color = (255, 0, 0)
         return space_color
 
 
@@ -186,7 +212,9 @@ for strand in strands:
     animations.append(chase)
     animations.append(comet)
     chase_animations.append(Chase(strand, CHASE_SPEED_2, (255, 255, 255)))
-    pair_chase_animations.append(PairChase(strand, CHASE_SPEED_2, (0, 0, 0)))
+    pair_chase_animations.append(
+        PairChase(strand, CHASE_SPEED_2, (0, 0, 0), size=3, spacing=2)
+    )
     color_chunk_chase_animations.append(
         Chase(strand, CHASE_SPEED_2, (0, 0, 0), size=20, spacing=7)
     )
