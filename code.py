@@ -38,6 +38,13 @@ class PairChase(Chase):
             name=name,
         )
 
+    def space_color(self, n, pixel_no=0):
+        if isinstance(self.color[0], int):
+            space_color = self.make_space(*self.color)
+        else:
+            space_color = (255, 0, 0)
+        return space_color
+
     @staticmethod
     def make_space(red, green, blue):
         off_thresh = 20
@@ -60,13 +67,6 @@ class PairChase(Chase):
         else:
             space = (255 - red, 255 - green, 255 - blue)
         return space
-
-    def space_color(self, n, pixel_no=0):
-        if isinstance(self.color[0], int):
-            space_color = self.make_space(*self.color)
-        else:
-            space_color = (255, 0, 0)
-        return space_color
 
 
 class RollingValue:
