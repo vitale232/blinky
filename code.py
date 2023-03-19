@@ -38,13 +38,6 @@ class PairChase(Chase):
             name=name,
         )
 
-    def space_color(self, n, pixel_no=0):
-        if isinstance(self.color[0], int):
-            space_color = self.make_space(*self.color)
-        else:
-            space_color = (255, 0, 0)
-        return space_color
-
     @staticmethod
     def make_space(red, green, blue):
         off_thresh = 20
@@ -67,6 +60,13 @@ class PairChase(Chase):
         else:
             space = (255 - red, 255 - green, 255 - blue)
         return space
+
+    def space_color(self, n, pixel_no=0):
+        if isinstance(self.color[0], int):
+            space_color = self.make_space(*self.color)
+        else:
+            space_color = (255, 0, 0)
+        return space_color
 
 
 class RollingValue:
@@ -121,7 +121,7 @@ def strand(pixels, strand_idx, strand_len):
     )
 
 
-def setup_strands(pin_a, brightness, n=2, strand_len=60):
+def setup_strands(pin_a, brightness, n=3, strand_len=60):
     print("calling setup_strands")
     npixels = n * strand_len
     pixels = NeoPxl8(
@@ -163,9 +163,11 @@ print(f"Main Logic: {time.monotonic()}")
 (rg_led, b_led) = turn_on_rgb_led()
 button = setup_button()
 
-(strands, pixels) = setup_strands(board.NEOPIXEL0, brightness=0.55)
+num_strands = 3
+(strands, pixels) = setup_strands(board.NEOPIXEL0, brightness=0.55, n=num_strands)
 pixels.fill((0, 0, 0))
 pixels.show()
+
 
 # Say hello to my lil friend
 neopix = neopixel.NeoPixel(board.NEOPIXEL, 1)
@@ -179,7 +181,6 @@ neopix[0] = (255, 255, 255)
 time.sleep(0.5)
 
 chase_idx = -1
-num_strands = 2
 
 last_paint_time = -1
 
